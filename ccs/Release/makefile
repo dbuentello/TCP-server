@@ -13,6 +13,7 @@ $(GEN_CMDS__FLAG) \
 "./pinmux.obj" \
 "./startup_ccs.obj" \
 "./uart_if.obj" \
+"./udma_if.obj" \
 "../cc3200v1p32.cmd" \
 -l"libc.a" \
 -l"C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/ccs\..\..\..\driverlib\ccs\Release\driverlib.a" \
@@ -147,8 +148,8 @@ BREWise_2.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" "uart_if.pp" 
-	-$(RM) "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" 
+	-$(RM) "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" "uart_if.pp" "udma_if.pp" 
+	-$(RM) "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" "udma_if.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

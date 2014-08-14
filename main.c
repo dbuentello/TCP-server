@@ -55,6 +55,8 @@
 //
 //****************************************************************************
 #include "stdio.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Simplelink includes
 #include "simplelink.h"
@@ -62,6 +64,8 @@
 //Driverlib includes
 #include "hw_types.h"
 #include "hw_ints.h"
+#include "hw_memmap.h"
+#include "hw_common_reg.h"
 #include "rom.h"
 #include "rom_map.h"
 #include "interrupt.h"
@@ -71,6 +75,7 @@
 //Common interface includes
 #include "pinmux.h"
 #include "gpio_if.h"
+#include "udma_if.h"
 #ifndef NOTERM
 #include "uart_if.h"
 #endif
@@ -89,6 +94,7 @@
 #define WLAN_DEL_ALL_PROFILES   0xFF
 #define SSID_LEN_MAX            (32)
 #define BSSID_LEN_MAX           (6)
+#define BUF_SIZE            	20
 
 #define SL_STOP_TIMEOUT          30
 #define UNUSED(x)               x = x
@@ -155,6 +161,8 @@ extern uVectorEntry __vector_table;
 //****************************************************************************
 //                      LOCAL FUNCTION PROTOTYPES
 //****************************************************************************
+int BsdTcpServer(unsigned short usPort);
+static void DisplayBanner();
 int SmartConfigConnect();
 static void BoardInit(void);
 static void InitializeAppVariables();
@@ -541,6 +549,174 @@ static long ConfigureSimpleLinkToDefaultState()
     return lRetVal; // Success
 }
 
+//****************************************************************************
+//
+//! \brief Opening a TCP server side socket and receiving data
+//!
+//! This function opens a TCP socket in Listen mode and waits for an incoming
+//!    TCP connection.
+//! If a socket connection is established then the function will try to read
+//!    1000 TCP packets from the connected client.
+//!
+//! \param[in] port number on which the server will be listening on
+//!
+//! \return     0 on success, -1 on error.
+//!
+//! \note   This function will wait for an incoming connection till
+//!                     one is established
+//
+
+//****************************************************************************
+int BsdTcpServer(unsigned short usPort)
+{
+  SlSockAddrIn_t  sAddr;
+  SlSockAddrIn_t  sLocalAddr;
+  int             iCounter;
+  int             iAddrSize;
+  int             iSockID;
+  int             iStatus;
+  int             iNewSockID;
+  long            lLoopCount = 0;
+  long            lNonBlocking = 1;
+  int             iTestBufLen;
+
+  char g_cBsdBuf[BUF_SIZE];
+  unsigned long  g_ulPacketCount = 10;
+
+  int i;
+  //char answer;
+
+  // filling the buffer
+  for (iCounter=0 ; iCounter<BUF_SIZE ; iCounter++)
+  {
+    g_cBsdBuf[iCounter] = (char)(iCounter % 10);
+  }
+
+  iTestBufLen  = BUF_SIZE;
+
+  //filling the TCP server socket address
+  sLocalAddr.sin_family = SL_AF_INET;
+  sLocalAddr.sin_port = sl_Htons((unsigned short)usPort);
+  sLocalAddr.sin_addr.s_addr = 0;
+
+  // creating a TCP socket
+  iSockID = sl_Socket(SL_AF_INET,SL_SOCK_STREAM, 0);
+  if( iSockID < 0 )
+  {
+    // error
+    return -1;
+  }
+
+  iAddrSize = sizeof(SlSockAddrIn_t);
+
+  // binding the TCP socket to the TCP server address
+  iStatus = sl_Bind(iSockID, (SlSockAddr_t *)&sLocalAddr, iAddrSize);
+  if( iStatus < 0 )
+  {
+    // error
+    sl_Close(iSockID);
+    return -1;
+  }
+
+  // putting the socket for listening to the incoming TCP connection
+  iStatus = sl_Listen(iSockID, 0);
+  if( iStatus < 0 )
+  {
+    sl_Close(iSockID);
+    return -1;
+  }
+
+  // setting socket option to make the socket as non blocking
+  iStatus = sl_SetSockOpt(iSockID, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
+                            &lNonBlocking, sizeof(lNonBlocking));
+  if( iStatus < 0 )
+  {
+    return -1;
+  }
+  iNewSockID = SL_EAGAIN;
+
+  // waiting for an incoming TCP connection
+  while( iNewSockID < 0 )
+  {
+    // accepts a connection form a TCP client, if there is any
+    // otherwise returns SL_EAGAIN
+    iNewSockID = sl_Accept(iSockID, ( struct SlSockAddr_t *)&sAddr,
+                            (SlSocklen_t*)&iAddrSize);
+    if( iNewSockID == SL_EAGAIN )
+    {
+       MAP_UtilsDelay(10000);
+    }
+    else if( iNewSockID < 0 )
+    {
+      // error
+      sl_Close(iNewSockID);
+      sl_Close(iSockID);
+      return -1;
+    }
+  }
+
+  // waits for 1000 packets from the connected TCP client
+  while (lLoopCount < g_ulPacketCount)
+  {
+    iStatus = sl_Recv(iNewSockID, g_cBsdBuf, iTestBufLen, 0);
+    if( iStatus <= 0 )
+    {
+      // error
+      sl_Close(iNewSockID);
+      sl_Close(iSockID);
+      return -1;
+    }
+    //answer = Interpreter(g_cBsdBuf);
+    for(i = 0; g_cBsdBuf[i] != 0; i++)
+    {
+    	Report("%c", g_cBsdBuf[i]);
+    }
+    Report("\n\r");
+    //Report("%d\n\r", answer);
+    /*
+    iStatus = sl_Send(iNewSockID, &answer, sizeof(answer), 0 );
+    if( iStatus <= 0 )
+    {
+        // error
+        sl_Close(iNewSockID);
+        sl_Close(iSockID);
+        return -1;
+    }
+	*/
+    lLoopCount++;
+  }
+
+
+  Report("Recieved %u packets successfully\n\r",g_ulPacketCount);
+
+  // close the connected socket after receiving from connected TCP client
+  sl_Close(iNewSockID);
+
+  // close the listening socket
+  sl_Close(iSockID);
+
+  return 0;
+}
+
+//*****************************************************************************
+//
+//! Application startup display on UART
+//!
+//! \param  none
+//!
+//! \return none
+//!
+//*****************************************************************************
+static void
+DisplayBanner(char * AppName)
+{
+
+    Report("\n\n\n\r");
+    Report("\t\t *************************************************\n\r");
+    Report("\t\t      CC3200 %s Application       \n\r", AppName);
+    Report("\t\t *************************************************\n\r");
+    Report("\n\n\n\r");
+}
 
 //*****************************************************************************
 //
@@ -658,6 +834,10 @@ int main(void)
     //
     BoardInit();
     //
+    // Initialize the uDMA
+    //
+    UDMAInit();
+    //
     // Configure the pinmux settings for the peripherals exercised
     //
     PinMuxConfig();
@@ -670,6 +850,10 @@ int main(void)
     GPIO_IF_LedConfigure(LED1);
 
 	GPIO_IF_LedOff(MCU_RED_LED_GPIO);
+	//
+	// Display banner
+	//
+	DisplayBanner(APPLICATION_NAME);
 
 	InitializeAppVariables();
 
@@ -711,6 +895,9 @@ int main(void)
 
    /* Connect to our AP using SmartConfig method */
    SmartConfigConnect();
+
+   BsdTcpServer(5001);
+
 
    LOOP_FOREVER(__LINE__);
 }

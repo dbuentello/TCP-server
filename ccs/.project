@@ -50,6 +50,11 @@
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/common/uart_if.c</locationURI>
 		</link>
+		<link>
+			<name>udma_if.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/common/udma_if.c</locationURI>
+		</link>
 	</linkedResources>
 	<variableList>
 		<variable>
