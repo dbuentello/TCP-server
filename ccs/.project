@@ -45,6 +45,11 @@
 			<type>1</type>
 			<locationURI>copy_PARENT/common/startup_ccs.c</locationURI>
 		</link>
+		<link>
+			<name>uart_if.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/common/uart_if.c</locationURI>
+		</link>
 	</linkedResources>
 	<variableList>
 		<variable>

@@ -1,10 +1,12 @@
 # FIXED
 
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/main.c
+main.obj: c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/stdio.h
+main.obj: c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/linkage.h
+main.obj: c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/stdarg.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/simplelink.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../user.h
 main.obj: c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/string.h
-main.obj: c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/linkage.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../cc_pal.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../source/nonos.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../source/objInclusion.h
@@ -36,12 +38,15 @@ main.obj: C:/ti/CC3200SDK/cc3200-sdk/driverlib/prcm.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/driverlib/utils.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/pinmux.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/common/gpio_if.h
+main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/common/uart_if.h
 
 C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/main.c: 
+c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/stdio.h: 
+c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/linkage.h: 
+c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/stdarg.h: 
 C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/simplelink.h: 
 C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../user.h: 
 c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/string.h: 
-c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/linkage.h: 
 C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../cc_pal.h: 
 C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../source/nonos.h: 
 C:/ti/CC3200SDK/cc3200-sdk/simplelink/Include/../source/objInclusion.h: 
@@ -73,3 +78,4 @@ C:/ti/CC3200SDK/cc3200-sdk/driverlib/prcm.h:
 C:/ti/CC3200SDK/cc3200-sdk/driverlib/utils.h: 
 C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/pinmux.h: 
 C:/ti/CC3200SDK/cc3200-sdk/example/common/gpio_if.h: 
+C:/ti/CC3200SDK/cc3200-sdk/example/common/uart_if.h: 

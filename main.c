@@ -54,6 +54,7 @@
 //! @{
 //
 //****************************************************************************
+#include "stdio.h"
 
 // Simplelink includes
 #include "simplelink.h"

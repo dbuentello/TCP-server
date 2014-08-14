@@ -12,6 +12,7 @@ $(GEN_CMDS__FLAG) \
 "./main.obj" \
 "./pinmux.obj" \
 "./startup_ccs.obj" \
+"./uart_if.obj" \
 "../cc3200v1p32.cmd" \
 -l"libc.a" \
 -l"C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/ccs\..\..\..\driverlib\ccs\Release\driverlib.a" \
@@ -132,7 +133,7 @@ all: BREWise_2.out
 BREWise_2.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: ARM Linker'
-	"c:/ti/ccsv6/tools/compiler/arm_5.1.6/bin/armcl" -mv7M4 --code_state=16 --float_support=vfplib --abi=eabi -me -Ooff -g --gcc --define=ccs --define=NOTERM --define=cc3200 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full --ual -z -m"BREWise_2.map" --heap_size=0x800 --stack_size=0x800 -i"c:/ti/ccsv6/tools/compiler/arm_5.1.6/lib" -i"c:/ti/ccsv6/tools/compiler/arm_5.1.6/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="BREWise_2_linkInfo.xml" --rom_model -o "BREWise_2.out" $(ORDERED_OBJS)
+	"c:/ti/ccsv6/tools/compiler/arm_5.1.6/bin/armcl" -mv7M4 --code_state=16 --float_support=vfplib --abi=eabi -me -Ooff -g --gcc --define=ccs --define=cc3200 --display_error_number --diag_warning=225 --diag_wrap=off --printf_support=full --ual -z -m"BREWise_2.map" --heap_size=0x800 --stack_size=0x800 -i"c:/ti/ccsv6/tools/compiler/arm_5.1.6/lib" -i"c:/ti/ccsv6/tools/compiler/arm_5.1.6/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="BREWise_2_linkInfo.xml" --rom_model -o "BREWise_2.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	@$(MAKE) --no-print-directory post-build
@@ -146,8 +147,8 @@ BREWise_2.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" 
-	-$(RM) "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" 
+	-$(RM) "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" "uart_if.pp" 
+	-$(RM) "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
