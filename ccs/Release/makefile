@@ -8,6 +8,7 @@ CG_TOOL_ROOT := c:/ti/ccsv6/tools/compiler/arm_5.1.6
 
 ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
+"./CommandTable.obj" \
 "./gpio_if.obj" \
 "./main.obj" \
 "./pinmux.obj" \
@@ -148,8 +149,8 @@ BREWise_2.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" "uart_if.pp" "udma_if.pp" 
-	-$(RM) "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" "udma_if.obj" 
+	-$(RM) "CommandTable.pp" "gpio_if.pp" "main.pp" "pinmux.pp" "startup_ccs.pp" "uart_if.pp" "udma_if.pp" 
+	-$(RM) "CommandTable.obj" "gpio_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" "udma_if.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

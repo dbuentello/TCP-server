@@ -26,6 +26,16 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>CommandTable.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/CommandTable.c</locationURI>
+		</link>
+		<link>
+			<name>CommandTable.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/CommandTable.h</locationURI>
+		</link>
+		<link>
 			<name>gpio_if.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT/common/gpio_if.c</locationURI>

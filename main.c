@@ -80,6 +80,9 @@
 #include "uart_if.h"
 #endif
 
+//Application includes
+#include "CommandTable.h"
+
 #ifdef NOTERM
 #define UART_PRINT(x,...)
 #else
@@ -584,7 +587,7 @@ int BsdTcpServer(unsigned short usPort)
   unsigned long  g_ulPacketCount = 10;
 
   int i;
-  //char answer;
+  char answer;
 
   // filling the buffer
   for (iCounter=0 ; iCounter<BUF_SIZE ; iCounter++)
@@ -666,14 +669,14 @@ int BsdTcpServer(unsigned short usPort)
       sl_Close(iSockID);
       return -1;
     }
-    //answer = Interpreter(g_cBsdBuf);
+    answer = Interpreter(g_cBsdBuf);
     for(i = 0; g_cBsdBuf[i] != 0; i++)
     {
     	Report("%c", g_cBsdBuf[i]);
     }
     Report("\n\r");
-    //Report("%d\n\r", answer);
-    /*
+    Report("%d\n\r", answer);
+
     iStatus = sl_Send(iNewSockID, &answer, sizeof(answer), 0 );
     if( iStatus <= 0 )
     {
@@ -682,7 +685,7 @@ int BsdTcpServer(unsigned short usPort)
         sl_Close(iSockID);
         return -1;
     }
-	*/
+
     lLoopCount++;
   }
 

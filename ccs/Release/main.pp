@@ -44,6 +44,7 @@ main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/pinmux.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/common/gpio_if.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/common/udma_if.h
 main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/common/uart_if.h
+main.obj: C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/CommandTable.h
 
 C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/main.c: 
 c:/ti/ccsv6/tools/compiler/arm_5.1.6/include/stdio.h: 
@@ -89,3 +90,4 @@ C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/pinmux.h:
 C:/ti/CC3200SDK/cc3200-sdk/example/common/gpio_if.h: 
 C:/ti/CC3200SDK/cc3200-sdk/example/common/udma_if.h: 
 C:/ti/CC3200SDK/cc3200-sdk/example/common/uart_if.h: 
+C:/ti/CC3200SDK/cc3200-sdk/example/BREWise_2/CommandTable.h: 
