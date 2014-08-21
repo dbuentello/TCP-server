@@ -68,6 +68,18 @@ PinMuxConfig(void)
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x2, GPIO_DIR_MODE_OUT);
 
     //
+    // Configure PIN_01 for GPIOOutput
+    //
+    MAP_PinTypeGPIO(PIN_01, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA1_BASE, 0x4, GPIO_DIR_MODE_OUT);
+
+    //
+    // Configure PIN_02 for GPIOOutput
+    //
+    MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
+
+    //
     // Configure PIN_55 for UART0 UART0_TX
     //
     MAP_PinTypeUART(PIN_55, PIN_MODE_3);

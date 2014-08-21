@@ -1,11 +1,35 @@
 //
 // Command table for BREWise controller
 //
+#include <stdio.h>
+#include "hw_types.h"
+#include "hw_ints.h"
+#include "hw_memmap.h"
+#include "pin.h"
+#include "gpio.h"
+#include "gpio_if.h"
 
+static char orangeStatus = 0;
+static char BWLED2Pin;
 
 static char temperature (void)
 {
 	return 88;
+}
+
+static char orange (void)
+{
+	if(orangeStatus == 0)
+	{
+		GPIO_IF_LedOn(MCU_ORANGE_LED_GPIO);
+		orangeStatus = 1;
+	}
+	else
+	{
+		GPIO_IF_LedOff(MCU_ORANGE_LED_GPIO);
+		orangeStatus = 0;
+	}
+	return 0;
 }
 
 char Interpreter (char* string)
@@ -18,10 +42,11 @@ char Interpreter (char* string)
 	};
 	typedef const struct CommandTable CommandTableType;
 
-	int NumCmds = 1;
+	int NumCmds = 2;
 
-	CommandTableType CT[1]={ //Command Table
-	{ "temperature\0", &temperature}, //Move Forward //:00MF1234F7
+	CommandTableType CT[2]={ //Command Table
+	{"temperature\0", &temperature}, //Move Forward //:00MF1234F7
+	{"orange\0", &orange},				// Turns orange light on or off
 	};
 
 	int i = 0;
@@ -42,12 +67,8 @@ char Interpreter (char* string)
 		{
 			return CT[j].fnctPt();
 		}
-		else
-		{
-			return (-1);
-		}
 
 	}
 
-	return 0;
+	return -1;
 }

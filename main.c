@@ -169,6 +169,7 @@ static void DisplayBanner();
 int SmartConfigConnect();
 static void BoardInit(void);
 static void InitializeAppVariables();
+static void mDNS_Task();
 
 //*****************************************************************************
 // SimpleLink Asynchronous Event Handlers -- Start
@@ -544,12 +545,52 @@ static long ConfigureSimpleLinkToDefaultState()
     lRetVal = sl_WlanPolicySet(SL_POLICY_PM , SL_NORMAL_POLICY, NULL, 0);
     ASSERT_ON_ERROR(__LINE__, lRetVal);
 
+    // Unregister mDNS services
+    lRetVal = sl_NetAppMDNSUnRegisterService(0, 0);
+    ASSERT_ON_ERROR(__LINE__, lRetVal);
+
     lRetVal = sl_Stop(SL_STOP_TIMEOUT);
     ASSERT_ON_ERROR(__LINE__, lRetVal);
 
     InitializeAppVariables();
 
     return lRetVal; // Success
+}
+
+//****************************************************************************
+//
+//! \brief Advertising the service via mDNS
+//!
+//! This function advertises a single service on local domain via
+//! the native mDNS functions of the CC3200.  The current service
+//! is advertised arbirarily as a _uart service.  Though it is
+//! used to communicate with the MCU via a TCP server.
+//!
+//! \param[in] None.
+//!
+//! \return    None.
+//!
+//! \note   This function will return immediately.
+//
+
+//****************************************************************************
+static void mDNS_Task()
+{
+    int iretvalmDNS;
+    unsigned char CustomService1[38]	= "CC3200._uart._tcp.local";
+
+    //Registering for the mDNS service.
+	iretvalmDNS = sl_NetAppMDNSRegisterService(CustomService1, strlen(CustomService1), "nada=95", strlen("nada=95"),1010,120,1);
+	Report("Register service  %s \n\rstatus %d\n\n",CustomService1,iretvalmDNS);
+
+	if(iretvalmDNS == 0)
+	{
+		Report("MDNS Registration successful\n\r");
+	}
+	else
+	{
+		Report("MDNS Registered failed: %d\n\r", iretvalmDNS);
+	}
 }
 
 //****************************************************************************
@@ -602,6 +643,7 @@ int BsdTcpServer(unsigned short usPort)
   sLocalAddr.sin_port = sl_Htons((unsigned short)usPort);
   sLocalAddr.sin_addr.s_addr = 0;
 
+
   // creating a TCP socket
   iSockID = sl_Socket(SL_AF_INET,SL_SOCK_STREAM, 0);
   if( iSockID < 0 )
@@ -636,64 +678,111 @@ int BsdTcpServer(unsigned short usPort)
   {
     return -1;
   }
-  iNewSockID = SL_EAGAIN;
 
-  // waiting for an incoming TCP connection
-  while( iNewSockID < 0 )
-  {
-    // accepts a connection form a TCP client, if there is any
-    // otherwise returns SL_EAGAIN
-    iNewSockID = sl_Accept(iSockID, ( struct SlSockAddr_t *)&sAddr,
-                            (SlSocklen_t*)&iAddrSize);
-    if( iNewSockID == SL_EAGAIN )
-    {
-       MAP_UtilsDelay(10000);
-    }
-    else if( iNewSockID < 0 )
-    {
-      // error
-      sl_Close(iNewSockID);
-      sl_Close(iSockID);
-      return -1;
-    }
-  }
+  while(1)
+   {
 
-  // waits for 1000 packets from the connected TCP client
-  while (lLoopCount < g_ulPacketCount)
-  {
-    iStatus = sl_Recv(iNewSockID, g_cBsdBuf, iTestBufLen, 0);
-    if( iStatus <= 0 )
-    {
-      // error
-      sl_Close(iNewSockID);
-      sl_Close(iSockID);
-      return -1;
-    }
-    answer = Interpreter(g_cBsdBuf);
-    for(i = 0; g_cBsdBuf[i] != 0; i++)
-    {
-    	Report("%c", g_cBsdBuf[i]);
-    }
-    Report("\n\r");
-    Report("%d\n\r", answer);
+	  iNewSockID = SL_EAGAIN;
+	  // waiting for an incoming TCP connection
+	  while( iNewSockID < 0 )
+	  {
+		// accepts a connection form a TCP client, if there is any
+		// otherwise returns SL_EAGAIN
+		iNewSockID = sl_Accept(iSockID, ( struct SlSockAddr_t *)&sAddr,
+								(SlSocklen_t*)&iAddrSize);
+		if( iNewSockID == SL_EAGAIN )
+		{
+		   MAP_UtilsDelay(10000);
+		}
+		else if( iNewSockID < 0 )
+		{
+		  // error
+		  sl_Close(iNewSockID);
+		  sl_Close(iSockID);
+		  Report("Closed on accept.\n\r");
+		  return -1;
+		}
+	  }
 
-    iStatus = sl_Send(iNewSockID, &answer, sizeof(answer), 0 );
-    if( iStatus <= 0 )
-    {
-        // error
-        sl_Close(iNewSockID);
-        sl_Close(iSockID);
-        return -1;
-    }
+	  iStatus = SL_EAGAIN;
+	  // waiting for an incoming TCP connection
+	  while( iStatus < 0 )
+	  {
+		// accepts a connection form a TCP client, if there is any
+		// otherwise returns SL_EAGAIN
+		iStatus = sl_Recv(iNewSockID, g_cBsdBuf, iTestBufLen, 0);
+		if( iStatus == SL_EAGAIN )
+		{
+		   MAP_UtilsDelay(10000);
+		}
+		else if( iStatus < 0 )
+		{
+		  // error
+		  sl_Close(iNewSockID);
+		  sl_Close(iSockID);
+		  Report("Closed on read.\n\r");
+		  return -1;
+		}
+	  }
+		answer = Interpreter(g_cBsdBuf);
+		for(i = 0; g_cBsdBuf[i] != 0; i++)
+		{
+			Report("%c", g_cBsdBuf[i]);
+		}
+		Report("\n\r");
+		Report("%d\n\r", answer);
 
-    lLoopCount++;
-  }
+		iStatus = sl_Send(iNewSockID, &answer, sizeof(answer), 0 );
+		if( iStatus <= 0 )
+		{
+			// error
+			sl_Close(iNewSockID);
+			sl_Close(iSockID);
+			Report("Closed on send.\n\r");
+			return -1;
+		}
+
+		lLoopCount++;
+	  //}
 
 
-  Report("Recieved %u packets successfully\n\r",g_ulPacketCount);
+	  Report("Recieved %u packets successfully\n\r",lLoopCount);
 
-  // close the connected socket after receiving from connected TCP client
-  sl_Close(iNewSockID);
+	  iStatus = SL_EAGAIN;
+	  // waiting for an incoming TCP connection
+	  while( iStatus < 0 )
+	  {
+		// accepts a connection form a TCP client, if there is any
+		// otherwise returns SL_EAGAIN
+		iStatus = sl_Recv(iNewSockID, g_cBsdBuf, iTestBufLen, 0);
+		if( iStatus == SL_EAGAIN )
+		{
+		   continue;
+		}
+		else if( iStatus == 0 )
+		{
+			sl_Close(iNewSockID);
+			Report("Closed that!\n\r");
+		}
+		else if( iStatus < 0 )
+		{
+			//error
+			sl_Close(iNewSockID);
+			sl_Close(iSockID);
+			Report("Closed on error final read.\n\r");
+			return -1;
+		}
+	  }
+		/*
+	  	  iStatus = sl_Recv(iNewSockID, g_cBsdBuf, iTestBufLen, 0);
+		if( iStatus <= 0 )
+		{
+		  // error
+		  sl_Close(iNewSockID);
+		  Report("Closed that!\n\r");
+		}
+		*/
+   } //while(1)
 
   // close the listening socket
   sl_Close(iSockID);
@@ -830,6 +919,7 @@ int SmartConfigConnect()
 
 
 int main(void)
+
 {
 	long lRetVal = -1;
     //
@@ -850,9 +940,10 @@ int main(void)
 	#endif
 
     // configure RED LED
-    GPIO_IF_LedConfigure(LED1);
+	GPIO_IF_LedConfigure(LED1|LED2|LED3);
 
-	GPIO_IF_LedOff(MCU_RED_LED_GPIO);
+	GPIO_IF_LedOff(MCU_ALL_LED_IND);
+
 	//
 	// Display banner
 	//
@@ -871,6 +962,7 @@ int main(void)
    // Note that all profiles and persistent settings that were done on the
    // device will be lost
    //
+
    lRetVal = ConfigureSimpleLinkToDefaultState();
    if(lRetVal < 0)
    {
@@ -899,7 +991,9 @@ int main(void)
    /* Connect to our AP using SmartConfig method */
    SmartConfigConnect();
 
-   BsdTcpServer(5001);
+   mDNS_Task();
+
+   BsdTcpServer(1010);
 
 
    LOOP_FOREVER(__LINE__);
