@@ -147,6 +147,7 @@ typedef enum{
 //
 // GLOBAL VARIABLES -- Start
 //
+char g_cBsdBuf[BUF_SIZE];
 unsigned long  g_ulStatus = 0;//SimpleLink Status
 unsigned long  g_ulGatewayIP = 0; //Network Gateway IP address
 unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1]; //Connection SSID
@@ -624,7 +625,7 @@ int BsdTcpServer(unsigned short usPort)
   long            lNonBlocking = 1;
   int             iTestBufLen;
 
-  char g_cBsdBuf[BUF_SIZE];
+
   unsigned long  g_ulPacketCount = 10;
 
   int i;
