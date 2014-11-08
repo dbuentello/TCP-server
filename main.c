@@ -76,6 +76,7 @@
 #include "pinmux.h"
 #include "gpio_if.h"
 #include "udma_if.h"
+#include "systick_if.h"
 #ifndef NOTERM
 #include "uart_if.h"
 #endif
@@ -102,6 +103,7 @@
 #define SL_STOP_TIMEOUT          30
 #define UNUSED(x)               x = x
 #define CLR_STATUS_BIT_ALL(status_variable)  (status_variable = 0)
+#define AUTO_CONNECTION_TIMEOUT_COUNT   (100)
 
 // Loop forever, user can change it as per application's requirement
 #define LOOP_FOREVER(line_number) \
@@ -152,6 +154,8 @@ unsigned long  g_ulStatus = 0;//SimpleLink Status
 unsigned long  g_ulGatewayIP = 0; //Network Gateway IP address
 unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1]; //Connection SSID
 unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
+unsigned long  g_ucConnectTimeout =0;
+
 #if defined(ccs)
 extern void (* const g_pfnVectors[])(void);
 #endif
@@ -552,7 +556,7 @@ static long ConfigureSimpleLinkToDefaultState()
 
     lRetVal = sl_Stop(SL_STOP_TIMEOUT);
     ASSERT_ON_ERROR(__LINE__, lRetVal);
-
+    UART_PRINT("Device is done configuring. \n\r");
     InitializeAppVariables();
 
     return lRetVal; // Success
@@ -844,85 +848,78 @@ BoardInit(void)
     PRCMCC3200MCUInit();
 }
 
-//*****************************************************************************
-//
-//! \brief Connecting to a WLAN Accesspoint using SmartConfig provisioning
-//!
-//! Enables SmartConfig provisioning for adding a new connection profile
-//! to CC3200. Since we have set the connection policy to Auto, once
-//! SmartConfig is complete, CC3200 will connect automatically to the new
-//! connection profile added by smartConfig.
-//!
-//! \param[in] 			        None
-//!
-//! \return	                    None
-//!
-//! \note
-//!
-//! \warning					If the WLAN connection fails or we don't
-//!                             acquire an IP address, We will be stuck in this
-//!                             function forever.
-//
-//*****************************************************************************
+
+/*!
+    \brief Connecting to a WLAN Accesspoint using SmartConfig provisioning
+
+    This function enables SmartConfig provisioning for adding a new connection profile to CC3100.
+    Since we have set the connection policy to Auto, once SmartConfig is complete,
+    CC3100 will connect automatically to the new connection profile added by smartConfig.
+
+    \param[in] 			        None
+
+    \return	                    None
+
+    \note
+
+    \warning					If the WLAN connection fails or we don't acquire an IP address,
+    							We will be stuck in this function forever.
+*/
 int SmartConfigConnect()
 {
-    unsigned char policyVal;
-    long lRetVal = -1;
+	unsigned char policyVal;
 
-    /* Clear all profiles */
-    /* This is of course not a must, it is used in this example to make sure
-     * we will connect to the new profile added by SmartConfig
-     */
-    lRetVal = sl_WlanProfileDel(WLAN_DEL_ALL_PROFILES);
+	/* Clear all profiles */
+	/* This is of course not a must, it is used in this example to make sure
+	* we will connect to the new profile added by SmartConfig
+	*/
+	//sl_WlanProfileDel(WLAN_DEL_ALL_PROFILES);
 
-    //set AUTO policy
-    lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
-                      SL_CONNECTION_POLICY(1,0,0,0,1),
-                      &policyVal,
-                      1 /*PolicyValLen*/);
-    ASSERT_ON_ERROR(__LINE__, lRetVal);
+	//set AUTO policy
 
-    /* Start SmartConfig
-     * This example uses the unsecured SmartConfig method
-     */
+	sl_WlanPolicySet(  SL_POLICY_CONNECTION,
+	                  SL_CONNECTION_POLICY(1,0,0,0,0),
+	                  &policyVal,
+	                  1 /*PolicyValLen*/);
 
-    lRetVal = sl_WlanSmartConfigStart(0,                            //groupIdBitmask
-    								  SMART_CONFIG_CIPHER_NONE,    //cipher
-                                      0,                           //publicKeyLen
-                                      0,                           //group1KeyLen
-                                      0,                           //group2KeyLen
-                                      NULL,                          //publicKey
-                                      NULL,                          //group1Key
-                                      NULL);                         //group2Key
-    ASSERT_ON_ERROR(__LINE__, lRetVal);
+	/* Start SmartConfig
+	* This example uses the unsecured SmartConfig method
+	*/
+	sl_WlanSmartConfigStart(0,                            //groupIdBitmask
+	                       SMART_CONFIG_CIPHER_NONE,    //cipher
+	                       0,                           //publicKeyLen
+	                       0,                           //group1KeyLen
+	                       0,                           //group2KeyLen
+	                       NULL,                          //publicKey
+	                       NULL,                          //group1Key
+	                       NULL);                         //group2Key
 
-    // Wait for WLAN Event
-	while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
-	{
-		_SlNonOsMainLoopTask();
-	}
-     //
-     // Turn ON the RED LED to indicate connection success
-     //
-     GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-     //wait for few moments
-     MAP_UtilsDelay(80000000);
-     //reset to default AUTO policy
-     lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
-                           SL_CONNECTION_POLICY(1,0,0,0,0),
-                           &policyVal,
-                           1 /*PolicyValLen*/);
-     ASSERT_ON_ERROR(__LINE__, lRetVal);
 
-     return SUCCESS;
+
 }
 
+/*!
+    \brief Stop SmartConfig provisioning
 
+    This function Stops SmartConfig provisioning
+
+    \param[in] 			        None
+
+    \return	                    None
+
+    \note
+
+*/
+void SmartConfigStop()
+{
+	sl_WlanSmartConfigStop();
+}
 
 int main(void)
 
 {
 	long lRetVal = -1;
+	unsigned char policyVal;
     //
     // Initialize Board configurations
     //
@@ -963,7 +960,7 @@ int main(void)
    // Note that all profiles and persistent settings that were done on the
    // device will be lost
    //
-
+	UART_PRINT("Device is configuring. \n\r");
    lRetVal = ConfigureSimpleLinkToDefaultState();
    if(lRetVal < 0)
    {
@@ -979,7 +976,12 @@ int main(void)
 
    CLR_STATUS_BIT_ALL(g_ulStatus);
 
-   //Start simplelink
+   //
+   // Start simplelink. Configured as Auto + Smartconfig so it will search
+   // the network for a matching profile first. If it can't find a match, it
+   // will automatically begin the Smartconfig routine. Sending the wilink a
+   // command will terminate the Smartconfig routine.
+   //
    lRetVal = sl_Start(0,0,0);
    if (lRetVal < 0 || ROLE_STA != lRetVal)
    {
@@ -989,8 +991,47 @@ int main(void)
 
    UART_PRINT("Device started as STATION \n\r");
 
-   /* Connect to our AP using SmartConfig method */
-   SmartConfigConnect();
+
+    while ( ((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus))) &&
+           g_ucConnectTimeout < AUTO_CONNECTION_TIMEOUT_COUNT)
+    {
+    	GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+        MAP_UtilsDelay(800000);
+        GPIO_IF_LedOff(MCU_RED_LED_GPIO);
+        MAP_UtilsDelay(800000);
+        _SlNonOsMainLoopTask();
+        g_ucConnectTimeout++;
+    }
+
+    //Couldn't connect Using Auto Profile
+    if(g_ucConnectTimeout == AUTO_CONNECTION_TIMEOUT_COUNT)
+    {
+        //Blink Red LED to Indicate Connection Error
+        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+
+        CLR_STATUS_BIT_ALL(g_ulStatus);
+
+        Report("Use Smart Config Application to configure the device.\n\r");
+        //Connect Using Smart Config
+        SmartConfigConnect();
+
+        //Waiting for the device to Auto Connect
+        // Wait for WLAN Event
+        UART_PRINT("Waiting for connection.\n\r");
+    	while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
+    	{
+    		_SlNonOsMainLoopTask();
+    	}
+
+    }
+
+	   /* Connect to our AP using SmartConfig method */
+
+   //
+   // Turn ON the RED LED to indicate connection success
+   //
+   GPIO_IF_LedOff(MCU_RED_LED_GPIO);
+   GPIO_IF_LedOn(MCU_GREEN_LED_GPIO);
 
    mDNS_Task();
 
