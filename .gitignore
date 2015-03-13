@@ -34,3 +34,20 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+ccs/.cproject
+ccs/.cproject
+ccs/.launches/BREWise_2.launch
+*.project
+ccs/.cproject
+*.bin
+ccs/Release/BREWise_2.out
+*.xml
+*.opt
+*.obj
+ccs/Release/CommandTable.pp
+ccs/Release/makefile
+*.pp
+ccs/Release/subdir_rules.mk
+*.mk
+ccs/Release/makefile

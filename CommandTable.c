@@ -9,6 +9,10 @@
 #include "pin.h"
 #include "gpio.h"
 #include "gpio_if.h"
+#include "uart.h"
+#include "uart_if.h"
+#include "utils.h"
+#include "adcdriver.h"
 
 static char orangeStatus = 0;
 static char *arguments[3];
@@ -27,6 +31,14 @@ static char getTemperature (char argCountL, char **argumentsL)
 
 static char orange (char argCountL, char **argumentsL)
 {
+	int sample;
+	float current = 0.010648;
+	float voltage;
+	float temperatureCelsius;
+	float temperatureFarenheit;
+	float rtdresistance;
+	float celsiusCalibration = 10.9;
+
 	if(orangeStatus == 0)
 	{
 		GPIO_IF_LedOn(MCU_ORANGE_LED_GPIO);
@@ -37,6 +49,20 @@ static char orange (char argCountL, char **argumentsL)
 		GPIO_IF_LedOff(MCU_ORANGE_LED_GPIO);
 		orangeStatus = 0;
 	}
+
+	sample = sampleAdc();
+	Report("ADC sample value is %d.\n\r", sample);
+
+	voltage = sample*1.45/4025;
+	Report("ADC voltage is %f.\n\r", voltage);
+
+	rtdresistance = voltage/current;
+	Report("RTD resistance is %f.\n\r", rtdresistance);
+
+	temperatureCelsius = (rtdresistance/100 - 1)/.00385 - celsiusCalibration;
+	temperatureFarenheit = (temperatureCelsius*9/5)+32;
+	Report("Temperature is %fC and %fF.\n\r", temperatureCelsius, temperatureFarenheit);
+
 	return 0;
 }
 

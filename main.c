@@ -72,17 +72,18 @@
 #include "prcm.h"
 #include "utils.h"
 
+
 //Common interface includes
 #include "pinmux.h"
 #include "gpio_if.h"
 #include "udma_if.h"
-#include "systick_if.h"
 #ifndef NOTERM
 #include "uart_if.h"
 #endif
 
 //Application includes
 #include "CommandTable.h"
+#include "adcdriver.h"
 
 #ifdef NOTERM
 #define UART_PRINT(x,...)
@@ -226,7 +227,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
 
         case SL_WLAN_DISCONNECT_EVENT:
         {
-            sl_protocol_wlanConnectAsyncResponse_t*  pEventData = NULL;
+        	slWlanConnectAsyncResponse_t*  pEventData = NULL;
 
             CLR_STATUS_BIT(g_ulStatus, STATUS_BIT_CONNECTION);
             CLR_STATUS_BIT(g_ulStatus, STATUS_BIT_IP_AQUIRED);
@@ -282,7 +283,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
 {
     switch(pNetAppEvent->Event)
     {
-        case SL_NETAPP_IPV4_ACQUIRED:
+        case SL_NETAPP_IPV4_IPACQUIRED_EVENT:
         {
             SlIpV4AcquiredAsync_t *pEventData = NULL;
 
@@ -371,7 +372,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
     //
        switch( pSock->Event )
     {
-        case SL_NETAPP_SOCKET_TX_FAILED:
+        case SL_SOCKET_TX_FAILED_EVENT:
             switch( pSock->EventData.status )
             {
                 case SL_ECLOSE:
@@ -920,18 +921,26 @@ int main(void)
 {
 	long lRetVal = -1;
 	unsigned char policyVal;
+
     //
     // Initialize Board configurations
     //
     BoardInit();
+
     //
     // Initialize the uDMA
     //
     UDMAInit();
+
     //
     // Configure the pinmux settings for the peripherals exercised
     //
     PinMuxConfig();
+
+    //
+    // Configure the ADC settings PIN58 Channel 0, includes pinmux
+    //
+    adcInit();
 
     #ifndef NOTERM
     	InitTerm();
@@ -961,6 +970,7 @@ int main(void)
    // device will be lost
    //
 	UART_PRINT("Device is configuring. \n\r");
+	/*
    lRetVal = ConfigureSimpleLinkToDefaultState();
    if(lRetVal < 0)
    {
@@ -972,6 +982,7 @@ int main(void)
    }
 
    UART_PRINT("Device is configured in default state \n\r");
+   */
 
 
    CLR_STATUS_BIT_ALL(g_ulStatus);
